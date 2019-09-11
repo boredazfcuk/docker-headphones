@@ -42,7 +42,6 @@ SetOwnerAndGroup(){
 
 LaunchHeadphones(){
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Starting Headphones as ${USER}"
-CMD python   
    su -m "${USER}" -c 'python '"${APPBASE}/Headphones.py"' --datadir '"${CONFIGDIR}"' --config '"${CONFIGDIR}/headphones.ini"''
 }
 
