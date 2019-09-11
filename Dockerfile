@@ -14,6 +14,8 @@ echo "$(date '+%d/%m/%Y - %H:%M:%S') | Install application dependencies" && \
    apk add --no-cache --no-progress ${APPDEPENDENCIES} && \
 echo "$(date '+%d/%m/%Y - %H:%M:%S') | Install ${REPO}" && \
    git clone -b master "https://github.com/${REPO}.git" "${APPBASE}" && \
+echo "$(date '+%d/%m/%Y - %H:%M:%S') | Set permissions on launch script" && \
+   chmod +x /usr/local/bin/start-headphones.sh && \
 echo "$(date '+%d/%m/%Y - %H:%M:%S') | ***** BUILD COMPLETE *****"
 
 HEALTHCHECK --start-period=10s --interval=1m --timeout=10s \
