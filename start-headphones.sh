@@ -11,7 +11,27 @@ Initialise(){
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local user: ${USER}:${UID}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local group: ${GROUP}:${GID}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones application directory: ${APPBASE}"
-   sed -i "s%http_host =.*$%http_host = ${LANIP}%" "${CONFIGDIR}/headphones.ini"  
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones configuration directory: ${CONFIGDIR}"
+   sed -i "s%http_host =.*$%http_host = ${LANIP}%" "${CONFIGDIR}/headphones.ini"
+
+   if [ ! -f "${CONFIGDIR}/https" ]; then mkdir -p "${CONFIGDIR}/https"; fi
+   if [ ! -f "${CONFIGDIR}/https/headphones.crt" ]; then
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate private key for encrypting communications"
+      openssl ecparam -genkey -name secp384r1 -out "${CONFIGDIR}/https/headphones.key"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Create certificate request"
+      openssl req -new -subj "/C=NA/ST=Global/L=Global/O=Headphones/OU=Headphones/CN=Headphones/" -key "${CONFIGDIR}/https/headphones.key" -out "${CONFIGDIR}/https/headphones.csr"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate self-signed certificate request"
+      openssl x509 -req -sha256 -days 3650 -in "${CONFIGDIR}/https/headphones.csr" -signkey "${CONFIGDIR}/https/headphones.key" -out "${CONFIGDIR}/https/headphones.crt"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Headphones to use ${CONFIGDIR}/https/headphones.key key file"
+      HEADPHONESKEY="$(sed -nr '/\[General\]/,/\[/{/^https_key =/p}' "${CONFIGDIR}/headphones.ini")"
+      sed -i "s%^${HEADPHONESKEY}$%https_key = ${CONFIGDIR}/https/headphones.key%" "${CONFIGDIR}/headphones.ini"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Headphones to use ${CONFIGDIR}/https/headphones.crt certificate file"
+      HEADPHONESCERT="$(sed -nr '/\[General\]/,/\[/{/^https_cert =/p}' "${CONFIGDIR}/headphones.ini")"
+      sed -i "s%^${HEADPHONESCERT}$%https_cert = ${CONFIGDIR}/https/headphones.crt%" "${CONFIGDIR}/headphones.ini"
+      HEADPHONESHTTPS="$(sed -nr '/\[General\]/,/\[/{/^enable_https =/p}' "${CONFIGDIR}/headphones.ini")"
+      sed -i "s%^${HEADPHONESHTTPS}$%enable_https = 1%" "${CONFIGDIR}/headphones.ini"
+   fi
+
 }
 
 CreateGroup(){
