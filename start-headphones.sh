@@ -115,7 +115,7 @@ Configure(){
       -e "/^\[General\]/,/^\[.*\]/ s%^api_enabled =.*%api_enabled = 1%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^enable_https =.*%enable_https = 1%" \
       "${CONFIGDIR}/headphones.ini"
-   if [ ! -z "${HEADPHONES}" ]; then
+   if [ ! -z "${HEADPHONESENABLED}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${CONFIGDIR}/headphones.ini"
    fi
    if [ ! -z "${KODIGID}" ]; then
@@ -129,7 +129,7 @@ Configure(){
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_host =.*%xbmc_host = http://kodi:8080%" \
          "${CONFIGDIR}/headphones.ini"
    fi
-   if [ ! -z "${DELUGE}" ]; then
+   if [ ! -z "${DELUGEENABLED}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Deluge"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^torrentblackhole_dir =.*%torrentblackhole_dir = ${DELUGEWATCHDIR}%" \
@@ -146,7 +146,7 @@ Configure(){
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_done_directory =.*%deluge_done_directory = ${MUSICCOMPLETEDIR}%" \
          "${CONFIGDIR}/headphones.ini"
    fi
-   if [ ! -z "${SABNZBD}" ]; then
+   if [ ! -z "${SABNZBDENABLED}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure SABnzbd"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^nzb_downloader =.*%nzb_downloader = 0%" \
@@ -159,7 +159,7 @@ Configure(){
          -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_password =.*%sab_password = ${STACKPASSWORD}%" \
          "${CONFIGDIR}/headphones.ini"
    fi
-   if [ ! -z "${SUBSONIC}" ]; then
+   if [ ! -z "${SUBSONICENABLED}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Subsonic"
       sed -i \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_host =.*%subsonic_host = https://subsonic:4141/subsonic/index.view%" \
