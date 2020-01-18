@@ -1,11 +1,11 @@
 #!/bin/ash
-if [ -z "${STACKUSER}" ]; then
-   STACKUSER="stackman"
-   STACKPASS="Skibidibbydibyodadubdub"
+if [ -z "${stack_user}" ]; then
+   stack_user="stackman"
+   stack_pass="Skibidibbydibyodadubdub"
 fi
-EXITCODE="$(wget --quiet --tries=1 --spider --no-check-certificate --user="${STACKUSER}" --password="${STACKPASSWORD}" "https://${HOSTNAME}:8181/headphones/home" && echo ${?})"
-if [ "${EXITCODE}" != 0 ]; then
-   echo "WebUI not responding: Error ${EXITCODE}"
+exit_code="$(wget --quiet --tries=1 --spider --no-check-certificate --user="${stack_user}" --password="${stack_password}" "https://${HOSTNAME}:8181/headphones/home" && echo ${?})"
+if [ "${exit_code}" != 0 ]; then
+   echo "WebUI not responding: Error ${exit_code}"
    exit 1
 fi
 echo "WebUIs available"
