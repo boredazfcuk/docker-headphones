@@ -115,10 +115,10 @@ Configure(){
       -e "/^\[General\]/,/^\[.*\]/ s%^api_enabled =.*%api_enabled = 1%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^enable_https =.*%enable_https = 1%" \
       "${config_dir}/headphones.ini"
-   if [ ! -z "${headphones_enabled}" ]; then
+   if [ "${headphones_enabled}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${kodi_group_id}" ]; then
+   if [ "${kodi_group_id}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Kodi Headless"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \
@@ -129,7 +129,7 @@ Configure(){
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_host =.*%xbmc_host = http://kodi:8080%" \
          "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${deluge_enabled}" ]; then
+   if [ "${deluge_enabled}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Deluge"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^torrentblackhole_dir =.*%torrentblackhole_dir = ${deluge_watch_dir}%" \
@@ -146,7 +146,7 @@ Configure(){
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_done_directory =.*%deluge_done_directory = ${music_complete_dir}%" \
          "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${sabnzbd_enabled}" ]; then
+   if [ "${sabnzbd_enabled}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure SABnzbd"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^nzb_downloader =.*%nzb_downloader = 0%" \
@@ -159,7 +159,7 @@ Configure(){
          -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_password =.*%sab_password = ${stack_password}%" \
          "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${subsonic_enabled}" ]; then
+   if [ "${subsonic_enabled}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Subsonic"
       sed -i \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_host =.*%subsonic_host = https://subsonic:4141/subsonic/index.view%" \
@@ -168,13 +168,13 @@ Configure(){
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_password =.*%subsonic_password = ${stack_password}1%" \
          "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${musicbrainz_code}" ]; then
+   if [ "${musicbrainz_code}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure MusicBrainz"
       sed -i -e "s%^mirror =.*%mirror = custom%" \
          -e "s%^customsleep =.*%customsleep = 1%" \
          -e "s%^customhost =.*%customhost = musicbrainz%" "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${prowl_api_key}" ]; then
+   if [ "${prowl_api_key}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configuring Prowl notifications"
       sed -i \
          -e "/^\[Prowl\]/,/^\[.*\]/ s%^prowl_enabled =.*%prowl_enabled = 1%" \
@@ -186,7 +186,7 @@ Configure(){
          -e "/^\[Prowl\]/,/^\[.*\]/ s%^prowl_enabled =.*%prowl_enabled = 0%" \
          "${config_dir}/headphones.ini"
    fi
-   if [ ! -z "${omgwtfnzbs_user}" ]; then
+   if [ "${omgwtfnzbs_user}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configuring OMGWTFNZBs search provider"
       sed -i \
          -e "/^\[omgwtfnzbs\]/,/^\[.*\]/ s%^omgwtfnzbs =.*%omgwtfnzbs = 1%" \
@@ -229,5 +229,5 @@ if [ ! -f "${config_dir}/headphones.ini" ]; then FirstRun; fi
 if [ ! -d "${config_dir}/https" ]; then EnableSSL; fi
 Configure
 SetOwnerAndGroup
-#if [ ! -z "${musicbrainz_code}" ]; then WaitForMusicBrainz; fi
+#if [ "${musicbrainz_code}" ]; then WaitForMusicBrainz; fi
 LaunchHeadphones
