@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.10
 MAINTAINER boredazfcuk
 ARG app_dependencies="git python py2-lxml py-openssl libxslt-dev tzdata openssl wget lame"
 ARG app_repo="rembo10/headphones"
