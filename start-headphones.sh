@@ -5,17 +5,17 @@ Initialise(){
    lan_ip="$(hostname -i)"
    echo -e "\n"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    ***** Starting rembo10/headphones container *****"
-   if [ -z "${stack_user}" ]; then echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: User name not set, defaulting to 'stackman'"; stack_user="stackman"; fi
-   if [ -z "${stack_password}" ]; then echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: Password not set, defaulting to 'Skibidibbydibyodadubdub'"; stack_password="Skibidibbydibyodadubdub"; fi   
-   if [ -z "${user_id}" ]; then echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: User ID not set, defaulting to '1000'"; user_id="1000"; fi
-   if [ -z "${group}" ]; then echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: Group name not set, defaulting to 'group'"; group="group"; fi
-   if [ -z "${group_id}" ]; then echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: Group ID not set, defaulting to '1000'"; group_id="1000"; fi
-   if [ -z "${music_dirs}" ]; then echo "$(date '+%Y-%m-%d %H:%M:%S') WARNING: Music library path not set, defaulting to '/storage/music/'"; else music_dirs="${music_dirs%%,*}"; fi
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local user: ${stack_user}:${user_id}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local group: ${group}:${group_id}"
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local user: ${stack_user:=stackman}:${user_id:=1000}"
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local group: ${group:=group}:${group_id:=1000}"
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Password: ${stack_password:=Skibidibbydibyodadubdub}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones application directory: ${app_base_dir}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones configuration directory: ${config_dir}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Music library path: ${music_dirs}"
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Listening IP Address: ${lan_ip}"
+   if [ -z "${music_dirs}" ]; then
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Music library location: ${music_dirs:=/storage/music/}"
+   else
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Music library location: ${music_dirs%%,*}"
+   fi
 }
 
 CreateGroup(){
