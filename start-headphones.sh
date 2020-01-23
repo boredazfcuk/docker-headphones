@@ -6,7 +6,7 @@ Initialise(){
    echo -e "\n"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    ***** Starting rembo10/headphones container *****"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local user: ${stack_user:=stackman}:${user_id:=1000}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local group: ${group:=group}:${group_id:=1000}"
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local group: ${headphones_group:=headphones}:${headphones_group_id:=1000}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Password: ${stack_password:=Skibidibbydibyodadubdub}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones application directory: ${app_base_dir}"
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones configuration directory: ${config_dir}"
@@ -19,11 +19,11 @@ Initialise(){
 }
 
 CreateGroup(){
-   if [ -z "$(getent group "${group}" | cut -d: -f3)" ]; then
+   if [ -z "$(getent group "${headphones_group}" | cut -d: -f3)" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Group ID available, creating group"
-      addgroup -g "${group_id}" "${group}"
-   elif [ ! "$(getent group "${group}" | cut -d: -f3)" = "${group_id}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') ERROR:   Group group_id mismatch - exiting"
+      addgroup -g "${headphones_group_id}" "${headphones_group}"
+   elif [ ! "$(getent group "${headphones_group}" | cut -d: -f3)" = "${headphones_group_id}" ]; then
+      echo "$(date '+%Y-%m-%d %H:%M:%S') ERROR:   Group headphones_group_id mismatch - exiting"
       exit 1
    fi
 }
@@ -31,7 +31,7 @@ CreateGroup(){
 CreateUser(){
    if [ -z "$(getent passwd "${stack_user}" | cut -d: -f3)" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    User ID available, creating user"
-      adduser -s /bin/ash -H -D -G "${group}" -u "${user_id}" "${stack_user}"
+      adduser -s /bin/ash -H -D -G "${headphones_group}" -u "${user_id}" "${stack_user}"
    elif [ ! "$(getent passwd "${stack_user}" | cut -d: -f3)" = "${user_id}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') ERROR:   User ID already in use - exiting"
       exit 1
@@ -41,7 +41,7 @@ CreateUser(){
 FirstRun(){
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    First run detected - create default config"
    find "${config_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
-   find "${config_dir}" ! -group "${group}" -exec chgrp "${group}" {} \;
+   find "${config_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
    su -m "${stack_user}" -c "python ${app_base_dir}/Headphones.py --datadir ${config_dir} --config ${config_dir}/headphones.ini --nolaunch --quiet --daemon --pidfile /tmp/headphones.pid"
    sleep 15
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    ***** Reload rembo10/headphones *****"
@@ -86,11 +86,17 @@ FirstRun(){
 
 EnableSSL(){
    if [ ! -f "${config_dir}/https" ]; then 
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Headphones to use HTTPS"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Initialise HTTPS"
       mkdir -p "${config_dir}/https"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate server key"
       openssl ecparam -genkey -name secp384r1 -out "${config_dir}/https/headphones.key"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate certificate request"
       openssl req -new -subj "/C=NA/ST=Global/L=Global/O=Headphones/OU=Headphones/CN=Headphones/" -key "${config_dir}/https/headphones.key" -out "${config_dir}/https/headphones.csr"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate certificate"
       openssl x509 -req -sha256 -days 3650 -in "${config_dir}/https/headphones.csr" -signkey "${config_dir}/https/headphones.key" -out "${config_dir}/https/headphones.crt" >/dev/null 2>&1
+   fi
+   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Headphones to use HTTPS"
+   if [ -f "${config_dir}/https/headphones.key" ] && [ -f "${config_dir}/https/headphones.crt" ]; then
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%https_key =.*%https_key = ${config_dir}/https/headphones.key%" \
          -e "/^\[General\]/,/^\[.*\]/ s%https_cert =.*%https_cert = ${config_dir}/https/headphones.crt%" \
@@ -118,7 +124,7 @@ Configure(){
    if [ "${headphones_enabled}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
-   if [ "${kodi_group_id}" ]; then
+   if [ "${kodi_headphones_group_id}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Kodi Headless"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \
@@ -203,9 +209,9 @@ Configure(){
 SetOwnerAndGroup(){
    echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Correct owner and group of application files, if required"
    find "${config_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
-   find "${config_dir}" ! -group "${group}" -exec chgrp "${group}" {} \;
+   find "${config_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
    find "${app_base_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
-   find "${app_base_dir}" ! -group "${group}" -exec chgrp "${group}" {} \;
+   find "${app_base_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
 }
 
 WaitForMusicBrainz(){
@@ -226,7 +232,7 @@ Initialise
 CreateGroup
 CreateUser
 if [ ! -f "${config_dir}/headphones.ini" ]; then FirstRun; fi
-if [ ! -d "${config_dir}/https" ]; then EnableSSL; fi
+EnableSSL
 Configure
 SetOwnerAndGroup
 #if [ "${musicbrainz_code}" ]; then WaitForMusicBrainz; fi
