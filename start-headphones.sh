@@ -124,7 +124,7 @@ Configure(){
    if [ "${headphones_enabled}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
-   if [ "${kodi_headphones_group_id}" ]; then
+   if [ "${kodi_headless_group_id}" ]; then
       echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Kodi Headless"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \
@@ -150,6 +150,8 @@ Configure(){
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_label =.*%deluge_label = music%" \
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_password =.*%deluge_password = ${stack_password}1%" \
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_done_directory =.*%deluge_done_directory = ${music_complete_dir}%" \
+         -e "/^\[Piratebay\]/,/^\[.*\]/ s%^piratebay =.*%piratebay = 1%" \
+         -e "/^\[Piratebay\]/,/^\[.*\]/ s%^piratebay_ratio =.*%piratebay_ratio = 1%" \
          "${config_dir}/headphones.ini"
    fi
    if [ "${sabnzbd_enabled}" ]; then
