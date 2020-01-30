@@ -117,7 +117,7 @@ Configure(){
       -e "/^\[General\]/,/^\[.*\]/ s%^launch_browser =.*%launch_browser = 0%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^music_dir =.*%music_dir = ${music_dirs}%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^destination_dir =.*%destination_dir = ${music_dirs}%" \
-      -e "/^\[General\]/,/^\[.*\]/ s%^api_key =.*%api_key = ${global_api_key}1%" \
+      -e "/^\[General\]/,/^\[.*\]/ s%^api_key =.*%api_key = ${global_api_key}%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^api_enabled =.*%api_enabled = 1%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^enable_https =.*%enable_https = 1%" \
       "${config_dir}/headphones.ini"
