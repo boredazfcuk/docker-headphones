@@ -13,11 +13,11 @@ echo "$(date '+%d/%m/%Y - %H:%M:%S') | Install application dependencies" && \
 echo "$(date '+%d/%m/%Y - %H:%M:%S') | Install ${app_repo}" && \
    git clone -b master "https://github.com/${app_repo}.git" "${app_base_dir}"
 
-COPY start-headphones.sh /usr/local/bin/start-headphones.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY healthcheck.sh /usr/local/bin/healthcheck.sh
 
 RUN echo "$(date '+%d/%m/%Y - %H:%M:%S') | Set permissions on launch script" && \
-   chmod +x /usr/local/bin/start-headphones.sh /usr/local/bin/healthcheck.sh && \
+   chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/healthcheck.sh && \
 echo "$(date '+%d/%m/%Y - %H:%M:%S') | ***** BUILD COMPLETE *****"
 
 HEALTHCHECK --start-period=10s --interval=1m --timeout=10s \
@@ -26,4 +26,4 @@ HEALTHCHECK --start-period=10s --interval=1m --timeout=10s \
 VOLUME "${config_dir}"
 WORKDIR "${app_base_dir}"
 
-CMD /usr/local/bin/start-headphones.sh
+ENTRYPOINT /usr/local/bin/entrypoint.sh

@@ -4,53 +4,53 @@
 Initialise(){
    lan_ip="$(hostname -i)"
    echo -e "\n"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    ***** Starting rembo10/headphones container *****"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local user: ${stack_user:=stackman}:${user_id:=1000}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local group: ${headphones_group:=headphones}:${headphones_group_id:=1000}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Password: ${stack_password:=Skibidibbydibyodadubdub}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones application directory: ${app_base_dir}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Headphones configuration directory: ${config_dir}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Listening IP Address: ${lan_ip}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : ***** Configuring Headphones container launch environment *****"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local user: ${stack_user:=stackman}:${user_id:=1000}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local group: ${headphones_group:=headphones}:${headphones_group_id:=1000}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Password: ${stack_password:=Skibidibbydibyodadubdub}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Headphones application directory: ${app_base_dir}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Headphones configuration directory: ${config_dir}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Listening IP Address: ${lan_ip}"
    if [ -z "${music_dirs}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Music library location: ${music_dirs:=/storage/music/}"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Music library location: ${music_dirs:=/storage/music/}"
    else
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Music library location: ${music_dirs%%,*}"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Music library location: ${music_dirs%%,*}"
    fi
 }
 
 CreateGroup(){
    if [ -z "$(getent group "${headphones_group}" | cut -d: -f3)" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Group ID available, creating group"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Group ID available, creating group"
       addgroup -g "${headphones_group_id}" "${headphones_group}"
    elif [ ! "$(getent group "${headphones_group}" | cut -d: -f3)" = "${headphones_group_id}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') ERROR:   Group headphones_group_id mismatch - exiting"
+      echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint :Group headphones_group_id mismatch - exiting"
       exit 1
    fi
 }
 
 CreateUser(){
    if [ -z "$(getent passwd "${stack_user}" | cut -d: -f3)" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    User ID available, creating user"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : User ID available, creating user"
       adduser -s /bin/ash -H -D -G "${headphones_group}" -u "${user_id}" "${stack_user}"
    elif [ ! "$(getent passwd "${stack_user}" | cut -d: -f3)" = "${user_id}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') ERROR:   User ID already in use - exiting"
+      echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint :User ID already in use - exiting"
       exit 1
    fi
 }
 
 FirstRun(){
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    First run detected - create default config"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : First run detected - create default config"
    find "${config_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
    find "${config_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
    su -m "${stack_user}" -c "python ${app_base_dir}/Headphones.py --datadir ${config_dir} --config ${config_dir}/headphones.ini --nolaunch --quiet --daemon --pidfile /tmp/headphones.pid"
    sleep 15
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    ***** Reload rembo10/headphones *****"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : ***** Reload Headphones launch environment *****"
    pkill python
    sleep 5
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Set git path: /usr/bin/git"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Disable git statup check"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure update interval to 48hr"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Set encoder type to: lame"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Set git path: /usr/bin/git"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Disable git statup check"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure update interval to 48hr"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Set encoder type to: lame"
    sed -i \
       -e "/^\[General\]/,/^\[.*\]/ s%^git_path =.*%git_path = /usr/bin/git%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^check_github =.*%check_github = 1%" \
@@ -86,16 +86,16 @@ FirstRun(){
 
 EnableSSL(){
    if [ ! -f "${config_dir}/https" ]; then 
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Initialise HTTPS"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Initialise HTTPS"
       mkdir -p "${config_dir}/https"
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate server key"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Generate server key"
       openssl ecparam -genkey -name secp384r1 -out "${config_dir}/https/headphones.key"
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate certificate request"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Generate certificate request"
       openssl req -new -subj "/C=NA/ST=Global/L=Global/O=Headphones/OU=Headphones/CN=Headphones/" -key "${config_dir}/https/headphones.key" -out "${config_dir}/https/headphones.csr"
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Generate certificate"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Generate certificate"
       openssl x509 -req -sha256 -days 3650 -in "${config_dir}/https/headphones.csr" -signkey "${config_dir}/https/headphones.key" -out "${config_dir}/https/headphones.crt" >/dev/null 2>&1
    fi
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Headphones to use HTTPS"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Headphones to use HTTPS"
    if [ -f "${config_dir}/https/headphones.key" ] && [ -f "${config_dir}/https/headphones.crt" ]; then
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%https_key =.*%https_key = ${config_dir}/https/headphones.key%" \
@@ -106,10 +106,10 @@ EnableSSL(){
 }
 
 Configure(){
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Disable browser launch on startup"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure host IP: ${lan_ip}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Set Music library path: ${music_dirs}"
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Enable API key: ${global_api_key}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Disable browser launch on startup"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure host IP: ${lan_ip}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Set Music library path: ${music_dirs}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Enable API key: ${global_api_key}"
    sed -i \
       -e "/^\[General\]/,/^\[.*\]/ s%^http_host =.*%http_host = ${lan_ip}%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^http_username =.*%http_username = ${stack_user}%" \
@@ -125,7 +125,7 @@ Configure(){
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
    if [ "${kodi_headless_group_id}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Kodi Headless"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Kodi Headless"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_notify =.*%xbmc_notify = 1%" \
@@ -136,7 +136,7 @@ Configure(){
          "${config_dir}/headphones.ini"
    fi
    if [ "${deluge_enabled}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Deluge"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Deluge"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^torrentblackhole_dir =.*%torrentblackhole_dir = ${deluge_watch_dir}%" \
          -e "/^\[General\]/,/^\[.*\]/ s%^download_torrent_dir =.*%download_torrent_dir = ${deluge_incoming_dir}%" \
@@ -155,7 +155,7 @@ Configure(){
          "${config_dir}/headphones.ini"
    fi
    if [ "${sabnzbd_enabled}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure SABnzbd"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure SABnzbd"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^nzb_downloader =.*%nzb_downloader = 0%" \
          -e "/^\[General\]/,/^\[.*\]/ s%^download_dir =.*%download_dir = ${music_complete_dir}%" \
@@ -168,7 +168,7 @@ Configure(){
          "${config_dir}/headphones.ini"
    fi
    if [ "${subsonic_enabled}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure Subsonic"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Subsonic"
       sed -i \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_host =.*%subsonic_host = https://subsonic:4141/subsonic/index.view%" \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_enabled =.*%subsonic_enabled = 1%" \
@@ -177,13 +177,13 @@ Configure(){
          "${config_dir}/headphones.ini"
    fi
    if [ "${musicbrainz_code}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configure MusicBrainz"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure MusicBrainz"
       sed -i -e "s%^mirror =.*%mirror = custom%" \
          -e "s%^customsleep =.*%customsleep = 1%" \
          -e "s%^customhost =.*%customhost = musicbrainz%" "${config_dir}/headphones.ini"
    fi
    if [ "${prowl_api_key}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configuring Prowl notifications"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configuring Prowl notifications"
       sed -i \
          -e "/^\[Prowl\]/,/^\[.*\]/ s%^prowl_enabled =.*%prowl_enabled = 1%" \
          -e "/^\[Prowl\]/,/^\[.*\]/ s%^prowl_keys =.*%prowl_keys = ${prowl_api_key}%" \
@@ -195,7 +195,7 @@ Configure(){
          "${config_dir}/headphones.ini"
    fi
    if [ "${omgwtfnzbs_user}" ]; then
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Configuring OMGWTFNZBs search provider"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configuring OMGWTFNZBs search provider"
       sed -i \
          -e "/^\[omgwtfnzbs\]/,/^\[.*\]/ s%^omgwtfnzbs =.*%omgwtfnzbs = 1%" \
          -e "/^\[omgwtfnzbs\]/,/^\[.*\]/ s%^omgwtfnzbs_uid =.*%omgwtfnzbs_uid = ${omgwtfnzbs_user}%" \
@@ -209,7 +209,7 @@ Configure(){
 }
 
 SetOwnerAndGroup(){
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Correct owner and group of application files, if required"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Correct owner and group of application files, if required"
    find "${config_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
    find "${config_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
    find "${app_base_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
@@ -217,16 +217,17 @@ SetOwnerAndGroup(){
 }
 
 WaitForMusicBrainz(){
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Local MusicBrainz server configured"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local MusicBrainz server configured"
    #while [ "$(mysql --host=mariadb --user=kodi --password="${kodi_password}" --execute="SELECT User FROM mysql.user;" 2>/dev/null | grep -c kodi)" = 0 ]; do
-      echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Waiting for MusicBrainz server to come online..." 
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Waiting for MusicBrainz server to come online..." 
       sleep 10
    #done
 }
 
 LaunchHeadphones(){
-   echo "$(date '+%Y-%m-%d %H:%M:%S') INFO:    Starting Headphones as ${stack_user}"
-   su -m "${stack_user}" -c "python ${app_base_dir}/Headphones.py --datadir ${config_dir} --config ${config_dir}/headphones.ini"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : ***** Configuration of Headphones container launch environment complete *****"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Starting Headphones as ${stack_user}"
+   exec "$(which su)" -p "${stack_user}" -c "$(which python) ${app_base_dir}/Headphones.py --datadir ${config_dir} --config ${config_dir}/headphones.ini"
 }
 
 ##### Script #####

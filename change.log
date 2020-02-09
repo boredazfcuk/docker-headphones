@@ -1,0 +1,5 @@
+20200209
+
+ - Change: Changed from CMD to ENTRYPOINT launch method
+ - Change: Launch Headphones using exec to it inherits PID from parent process
+ - Change: Amended log output format to match that of Headphones... cozwhynot?
