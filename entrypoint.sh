@@ -42,7 +42,7 @@ FirstRun(){
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : First run detected - create default config"
    find "${config_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
    find "${config_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
-   su -m "${stack_user}" -c "python ${app_base_dir}/Headphones.py --datadir ${config_dir} --config ${config_dir}/headphones.ini --nolaunch --quiet --daemon --pidfile /tmp/headphones.pid"
+   su -p "${stack_user}" -c "python ${app_base_dir}/Headphones.py --datadir ${config_dir} --config ${config_dir}/headphones.ini --nolaunch --quiet --daemon --pidfile /tmp/headphones.pid"
    sleep 15
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : ***** Reload Headphones launch environment *****"
    pkill python
@@ -124,7 +124,7 @@ Configure(){
    if [ "${headphones_enabled}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
-   if [ "${kodi_headless_group_id}" ]; then
+   if [ "${kodi_enabled}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Kodi Headless"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \

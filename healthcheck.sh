@@ -1,12 +1,9 @@
 #!/bin/ash
-if [ -z "${stack_user}" ]; then
-   stack_user="stackman"
-   stack_pass="Skibidibbydibyodadubdub"
-fi
-exit_code="$(wget --quiet --tries=1 --spider --no-check-certificate --user="${stack_user}" --password="${stack_password}" "https://${HOSTNAME}:8181/headphones/home" && echo ${?})"
-if [ "${exit_code}" != 0 ]; then
-   echo "WebUI not responding: Error ${exit_code}"
+
+if [ "$(nc -z "$(hostname -i)" 8181; echo "${?}")" -ne 0 ]; then
+   echo "Headphones WebUI not responding on port 8181"
    exit 1
 fi
-echo "WebUIs available"
+
+echo "Headphones WebUI responding on port 8181"
 exit 0
