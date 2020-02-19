@@ -1,3 +1,8 @@
+20200218
+
+ - Change: Broke the Configure() function into smaller sections for each stack component
+ - Change: Now waits for MusicBrainz server to come online before starting up (if MB server is configured)
+
 20200212
 
  - Change: Healtcheck now does a simpler to check on the availability of Heaphones port 8181

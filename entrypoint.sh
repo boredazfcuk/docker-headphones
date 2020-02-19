@@ -124,6 +124,9 @@ Configure(){
    if [ "${headphones_enabled}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
+}
+
+Kodi(){
    if [ "${kodi_enabled}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Kodi Headless"
       sed -i \
@@ -134,7 +137,14 @@ Configure(){
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_password =.*%xbmc_password = ${kodi_password}%" \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_host =.*%xbmc_host = http://kodi:8080%" \
          "${config_dir}/headphones.ini"
+   else
+      sed -i \
+      -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_enabled =.*%xbmc_enabled = 0%" \
+      "${config_dir}/headphones.ini"
    fi
+}
+
+Deluge(){
    if [ "${deluge_enabled}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Deluge"
       sed -i \
@@ -154,6 +164,9 @@ Configure(){
          -e "/^\[Piratebay\]/,/^\[.*\]/ s%^piratebay_ratio =.*%piratebay_ratio = 1%" \
          "${config_dir}/headphones.ini"
    fi
+}
+
+SABnzbd(){
    if [ "${sabnzbd_enabled}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure SABnzbd"
       sed -i \
@@ -167,6 +180,9 @@ Configure(){
          -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_password =.*%sab_password = ${stack_password}%" \
          "${config_dir}/headphones.ini"
    fi
+}
+
+Subsonic(){
    if [ "${subsonic_enabled}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Subsonic"
       sed -i \
@@ -175,13 +191,14 @@ Configure(){
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_username =.*%subsonic_username = ${stack_user}%1" \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_password =.*%subsonic_password = ${stack_password}1%" \
          "${config_dir}/headphones.ini"
+   else
+      sed -i \
+         -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_enabled =.*%subsonic_enabled = 0%" \
+         "${config_dir}/headphones.ini"
    fi
-   if [ "${musicbrainz_code}" ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure MusicBrainz"
-      sed -i -e "s%^mirror =.*%mirror = custom%" \
-         -e "s%^customsleep =.*%customsleep = 1%" \
-         -e "s%^customhost =.*%customhost = musicbrainz%" "${config_dir}/headphones.ini"
-   fi
+}
+
+Prowl(){
    if [ "${prowl_api_key}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configuring Prowl notifications"
       sed -i \
@@ -194,6 +211,9 @@ Configure(){
          -e "/^\[Prowl\]/,/^\[.*\]/ s%^prowl_enabled =.*%prowl_enabled = 0%" \
          "${config_dir}/headphones.ini"
    fi
+}
+
+OMGWTFNZBs(){
    if [ "${omgwtfnzbs_user}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configuring OMGWTFNZBs search provider"
       sed -i \
@@ -208,20 +228,35 @@ Configure(){
    fi
 }
 
+MusicBrainz(){
+   if [ "${musicbrainz_enabled}" ]; then 
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure MusicBrainz"
+      sed -i \
+         -e "s%^mirror =.*%mirror = custom%" \
+         -e "s%^customsleep =.*%customsleep = 1%" \
+         -e "s%^customhost =.*%customhost = musicbrainz%" \
+         "${config_dir}/headphones.ini"
+      while [ "$(nc -z musicbrainz 5432; echo $?)" -ne 0 ]; do
+         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Waiting for the MusicBrainz database to come online..."
+         sleep 10
+      done
+      while [ "$(nc -z musicbrainz 5000; echo $?)" -ne 0 ]; do
+         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Waiting for the MusicBrainz web page to come online..."
+         sleep 10
+      done
+   else
+      sed -i \
+         -e "s%^mirror =.*%mirror = musicbrainz.org%" \
+         "${config_dir}/headphones.ini"
+   fi
+}
+
 SetOwnerAndGroup(){
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Correct owner and group of application files, if required"
    find "${config_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
    find "${config_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
    find "${app_base_dir}" ! -user "${stack_user}" -exec chown "${stack_user}" {} \;
    find "${app_base_dir}" ! -group "${headphones_group}" -exec chgrp "${headphones_group}" {} \;
-}
-
-WaitForMusicBrainz(){
-   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local MusicBrainz server configured"
-   #while [ "$(mysql --host=mariadb --user=kodi --password="${kodi_password}" --execute="SELECT User FROM mysql.user;" 2>/dev/null | grep -c kodi)" = 0 ]; do
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Waiting for MusicBrainz server to come online..." 
-      sleep 10
-   #done
 }
 
 LaunchHeadphones(){
@@ -237,6 +272,12 @@ CreateUser
 if [ ! -f "${config_dir}/headphones.ini" ]; then FirstRun; fi
 EnableSSL
 Configure
+Kodi
+Deluge
+SABnzbd
+Subsonic
+Prowl
+OMGWTFNZBs
+MusicBrainz
 SetOwnerAndGroup
-#if [ "${musicbrainz_code}" ]; then WaitForMusicBrainz; fi
 LaunchHeadphones
