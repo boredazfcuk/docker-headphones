@@ -5,6 +5,7 @@ Initialise(){
    lan_ip="$(hostname -i)"
    echo -e "\n"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : ***** Configuring Headphones container launch environment *****"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : $(cat /etc/*-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/"//g')"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local user: ${stack_user:=stackman}:${user_id:=1000}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local group: ${headphones_group:=headphones}:${headphones_group_id:=1000}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Password: ${stack_password:=Skibidibbydibyodadubdub}"
