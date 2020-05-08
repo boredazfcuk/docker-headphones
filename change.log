@@ -1,3 +1,7 @@
+20200508
+
+ - Removal: HTTPS now removed. HTTPS encryption now handled by the NGINX reverse proxy which is part of the stack (boredazfcuk/steve). Container should not be accessible from outside the Docker network, so encrypting traffic to/from NGINX is just unneccesary overhead
+
 20200414
 
  - Change: Health check use of netcat scrapped. Causing log spam on certain containers. Now using netstat to check if listening port open

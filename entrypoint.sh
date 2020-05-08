@@ -85,27 +85,6 @@ FirstRun(){
    sleep 1
 }
 
-EnableSSL(){
-   if [ ! -f "${config_dir}/https" ]; then 
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Initialise HTTPS"
-      mkdir -p "${config_dir}/https"
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Generate server key"
-      openssl ecparam -genkey -name secp384r1 -out "${config_dir}/https/headphones.key"
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Generate certificate request"
-      openssl req -new -subj "/C=NA/ST=Global/L=Global/O=Headphones/OU=Headphones/CN=Headphones/" -key "${config_dir}/https/headphones.key" -out "${config_dir}/https/headphones.csr"
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Generate certificate"
-      openssl x509 -req -sha256 -days 3650 -in "${config_dir}/https/headphones.csr" -signkey "${config_dir}/https/headphones.key" -out "${config_dir}/https/headphones.crt" >/dev/null 2>&1
-   fi
-   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Headphones to use HTTPS"
-   if [ -f "${config_dir}/https/headphones.key" ] && [ -f "${config_dir}/https/headphones.crt" ]; then
-      sed -i \
-         -e "/^\[General\]/,/^\[.*\]/ s%https_key =.*%https_key = ${config_dir}/https/headphones.key%" \
-         -e "/^\[General\]/,/^\[.*\]/ s%https_cert =.*%https_cert = ${config_dir}/https/headphones.crt%" \
-         -e "/^\[General\]/,/^\[.*\]/ s%enable_https =.*%enable_https = 1%" \
-         "${config_dir}/headphones.ini"
-   fi
-}
-
 Configure(){
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Disable browser launch on startup"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure host IP: ${lan_ip}"
@@ -120,7 +99,6 @@ Configure(){
       -e "/^\[General\]/,/^\[.*\]/ s%^destination_dir =.*%destination_dir = ${music_dirs}%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^api_key =.*%api_key = ${global_api_key}%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^api_enabled =.*%api_enabled = 1%" \
-      -e "/^\[General\]/,/^\[.*\]/ s%^enable_https =.*%enable_https = 1%" \
       "${config_dir}/headphones.ini"
    if [ "${headphones_enabled}" ]; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
@@ -157,7 +135,7 @@ Deluge(){
          -e "/^\[General\]/,/^\[.*\]/ s%^magnet_links =.*%magnet_links = 1%" \
          -e "/^\[General\]/,/^\[.*\]/ s%^numberofseeders =.*%numberofseeders = 1%" \
          -e "/^\[General\]/,/^\[.*\]/ s%^torrent_downloader =.*%torrent_downloader = 3%" \
-         -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_host =.*%deluge_host = https://deluge:8112/%" \
+         -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_host =.*%deluge_host = http://deluge:8112/%" \
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_label =.*%deluge_label = music%" \
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_password =.*%deluge_password = ${stack_password}1%" \
          -e "/^\[Deluge\]/,/^\[.*\]/ s%^deluge_done_directory =.*%deluge_done_directory = ${music_complete_dir}%" \
@@ -174,7 +152,7 @@ SABnzbd(){
          -e "/^\[General\]/,/^\[.*\]/ s%^nzb_downloader =.*%nzb_downloader = 0%" \
          -e "/^\[General\]/,/^\[.*\]/ s%^download_dir =.*%download_dir = ${music_complete_dir}%" \
          -e "/^\[General\]/,/^\[.*\]/ s%^blackhole_dir =.*%blackhole_dir = ${sabnzbd_watch_dir}%" \
-         -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_host =.*%sab_host = https://sabnzbd:9090/sabnzbd%" \
+         -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_host =.*%sab_host = http://sabnzbd:9090/sabnzbd%" \
          -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_category =.*%sab_category = music%" \
          -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_apikey =.*%sab_apikey = ${global_api_key}%" \
          -e "/^\[SABnzbd\]/,/^\[.*\]/ s%^sab_username =.*%sab_username = ${stack_user}%" \
@@ -183,11 +161,11 @@ SABnzbd(){
    fi
 }
 
-Subsonic(){
-   if [ "${subsonic_enabled}" ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Subsonic"
+Airsonic(){
+   if [ "${airsonic_enabled}" ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Airsonic"
       sed -i \
-         -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_host =.*%subsonic_host = https://subsonic:4141/subsonic/index.view%" \
+         -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_host =.*%subsonic_host = http://airsonic:4040/airsonic/%" \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_enabled =.*%subsonic_enabled = 1%" \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_username =.*%subsonic_username = ${stack_user}%1" \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_password =.*%subsonic_password = ${stack_password}1%" \
@@ -271,12 +249,11 @@ Initialise
 CreateGroup
 CreateUser
 if [ ! -f "${config_dir}/headphones.ini" ]; then FirstRun; fi
-EnableSSL
 Configure
 Kodi
 Deluge
 SABnzbd
-Subsonic
+Airsonic
 Prowl
 OMGWTFNZBs
 MusicBrainz
