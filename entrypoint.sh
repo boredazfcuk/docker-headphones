@@ -19,23 +19,60 @@ Initialise(){
    fi
 }
 
+CheckOpenVPNPIA(){
+   if [ "${openvpnpia_enabled}" ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : OpenVPNPIA is enabled. Wait for VPN to connect"
+      vpn_adapter="$(ip addr | grep tun.$ | awk '{print $7}')"
+      while [ -z "${vpn_adapter}" ]; do
+         vpn_adapter="$(ip addr | grep tun.$ | awk '{print $7}')"
+         sleep 5
+      done
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : VPN adapter available: ${vpn_adapter}"
+   else
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : OpenVPNPIA is not enabled"
+   fi
+}
+
 CreateGroup(){
-   if [ -z "$(getent group "${headphones_group}" | cut -d: -f3)" ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Group ID available, creating group"
-      addgroup -g "${headphones_group_id}" "${headphones_group}"
-   elif [ ! "$(getent group "${headphones_group}" | cut -d: -f3)" = "${headphones_group_id}" ]; then
-      echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint :Group headphones_group_id mismatch - exiting"
-      exit 1
+   if [ "$(grep -c "^${headphones_group}:x:${headphones_group_id}:" "/etc/group")" -eq 1 ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Group, ${headphones_group}:${headphones_group_id}, already created"
+   else
+      if [ "$(grep -c "^${headphones_group}:" "/etc/group")" -eq 1 ]; then
+         echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : Group name, ${headphones_group}, already in use - exiting"
+         sleep 120
+         exit 1
+      elif [ "$(grep -c ":x:${headphones_group_id}:" "/etc/group")" -eq 1 ]; then
+         if [ "${force_gid}" = "True" ]; then
+            group="$(grep ":x:${headphones_group_id}:" /etc/group | awk -F: '{print $1}')"
+            echo "$(date '+%d-%b-%Y %T') - WARNING :: Entrypoint : Group id, ${headphones_group_id}, already exists - continuing as force_gid variable has been set. Group name to use: ${headphones_group}"
+         else
+            echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : Group id, ${headphones_group_id}, already in use - exiting"
+            sleep 120
+            exit 1
+         fi
+      else
+         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Creating group ${headphones_group}:${headphones_group_id}"
+         addgroup -g "${headphones_group_id}" "${headphones_group}"
+      fi
    fi
 }
 
 CreateUser(){
-   if [ -z "$(getent passwd "${stack_user}" | cut -d: -f3)" ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : User ID available, creating user"
-      adduser -s /bin/ash -H -D -G "${headphones_group}" -u "${user_id}" "${stack_user}"
-   elif [ ! "$(getent passwd "${stack_user}" | cut -d: -f3)" = "${user_id}" ]; then
-      echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint :User ID already in use - exiting"
-      exit 1
+   if [ "$(grep -c "^${stack_user}:x:${user_id}:${headphones_group_id}" "/etc/passwd")" -eq 1 ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : User, ${stack_user}:${user_id}, already created"
+   else
+      if [ "$(grep -c "^${stack_user}:" "/etc/passwd")" -eq 1 ]; then
+         echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : User name, ${stack_user}, already in use - exiting"
+         sleep 120
+         exit 1
+      elif [ "$(grep -c ":x:${user_id}:$" "/etc/passwd")" -eq 1 ]; then
+         echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : User id, ${user_id}, already in use - exiting"
+         sleep 120
+         exit 1
+      else
+         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Creating user ${stack_user}:${user_id}"
+         adduser -s /bin/ash -D -G "${headphones_group}" -u "${user_id}" "${stack_user}" -h "/home/${stack_user}"
+      fi
    fi
 }
 
@@ -246,6 +283,7 @@ LaunchHeadphones(){
 
 ##### Script #####
 Initialise
+CheckOpenVPNPIA
 CreateGroup
 CreateUser
 if [ ! -f "${config_dir}/headphones.ini" ]; then FirstRun; fi
