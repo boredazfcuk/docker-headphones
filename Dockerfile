@@ -5,7 +5,7 @@ ARG app_repo="rembo10/headphones"
 ENV app_base_dir="/Headphones" \
    config_dir="/config"
 
-RUN echo "$(date '+%d/%m/%Y - %H:%M:%S') | ***** BUILD STARTED *****" && \
+RUN echo "$(date '+%d/%m/%Y - %H:%M:%S') | ***** BUILD STARTED FOR HEADPHONES *****" && \
 echo "$(date '+%d/%m/%Y - %H:%M:%S') | Add group, user and required directories" && \
    mkdir -p "${app_base_dir}" && \
 echo "$(date '+%d/%m/%Y - %H:%M:%S') | Install application dependencies" && \
