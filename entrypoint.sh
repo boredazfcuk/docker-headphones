@@ -144,14 +144,14 @@ Configure(){
 
 Kodi(){
    if [ "${kodi_enabled}" ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Kodi Headless"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Kodi"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_notify =.*%xbmc_notify = 1%" \
-         -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_username =.*%xbmc_username = kodi%" \
+         -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_username =.*%xbmc_username = ${kodi_username:=kodi}%" \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_enabled =.*%xbmc_enabled = 1%" \
-         -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_password =.*%xbmc_password = ${kodi_password}%" \
-         -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_host =.*%xbmc_host = http://kodi:8080%" \
+         -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_password =.*%xbmc_password = ${kodi_password:=kodi}%" \
+         -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_host =.*%xbmc_host = http://${kodi_host:=kodi}:${kodi_port:=8080}%" \
          "${config_dir}/headphones.ini"
    else
       sed -i \
