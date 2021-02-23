@@ -3,15 +3,17 @@
 ##### Functions #####
 Initialise(){
    lan_ip="$(hostname -i)"
+   default_gateway="$(ip route | grep "^default" | awk '{print $3}')"
    echo
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : ***** Configuring Headphones container launch environment *****"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : $(cat /etc/*-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/"//g')"
-   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local user: ${stack_user:=stackman}:${user_id:=1000}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local user: ${stack_user:=stackman}:${stack_uid:=1000}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Local group: ${headphones_group:=headphones}:${headphones_group_id:=1000}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Password: ${stack_password:=Skibidibbydibyodadubdub}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Headphones application directory: ${app_base_dir}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Headphones configuration directory: ${config_dir}"
    echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Listening IP Address: ${lan_ip}"
+   echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Docker host LAN IP subnet: ${host_lan_ip_subnet}"
    if [ -z "${music_dirs}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Music library location: ${music_dirs:=/storage/music/}"
    else
@@ -19,9 +21,9 @@ Initialise(){
    fi
 }
 
-CheckOpenVPNPIA(){
-   if [ "${openvpnpia_enabled}" ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : OpenVPNPIA is enabled. Wait for VPN to connect"
+CheckPIANextGen(){
+   if [ "${pianextgen_enabled}" ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : PIANextGen is enabled. Wait for VPN to connect"
       vpn_adapter="$(ip addr | grep tun.$ | awk '{print $7}')"
       while [ -z "${vpn_adapter}" ]; do
          vpn_adapter="$(ip addr | grep tun.$ | awk '{print $7}')"
@@ -29,7 +31,14 @@ CheckOpenVPNPIA(){
       done
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : VPN adapter available: ${vpn_adapter}"
    else
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : OpenVPNPIA is not enabled"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : PIANextGen shared network stack is not enabled, configure container forwarding mode mode"
+      pianextgen_host="$(getent hosts pianextgen | awk '{print $1}')"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : PIANextGen container IP address: ${pianextgen_host}"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Create default route via ${pianextgen_host}"
+      ip route del default 
+      ip route add default via "${pianextgen_host}"
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Create additional route to Docker host network ${host_lan_ip_subnet} via ${default_gateway}"
+      ip route add "${host_lan_ip_subnet}" via "${default_gateway}"
    fi
 }
 
@@ -58,20 +67,20 @@ CreateGroup(){
 }
 
 CreateUser(){
-   if [ "$(grep -c "^${stack_user}:x:${user_id}:${headphones_group_id}" "/etc/passwd")" -eq 1 ]; then
-      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : User, ${stack_user}:${user_id}, already created"
+   if [ "$(grep -c "^${stack_user}:x:${stack_uid}:${headphones_group_id}" "/etc/passwd")" -eq 1 ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : User, ${stack_user}:${stack_uid}, already created"
    else
       if [ "$(grep -c "^${stack_user}:" "/etc/passwd")" -eq 1 ]; then
          echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : User name, ${stack_user}, already in use - exiting"
          sleep 120
          exit 1
-      elif [ "$(grep -c ":x:${user_id}:$" "/etc/passwd")" -eq 1 ]; then
-         echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : User id, ${user_id}, already in use - exiting"
+      elif [ "$(grep -c ":x:${stack_uid}:$" "/etc/passwd")" -eq 1 ]; then
+         echo "$(date '+%d-%b-%Y %T') - ERROR :: Entrypoint : User id, ${stack_uid}, already in use - exiting"
          sleep 120
          exit 1
       else
-         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Creating user ${stack_user}:${user_id}"
-         adduser -s /bin/ash -D -G "${headphones_group}" -u "${user_id}" "${stack_user}" -h "/home/${stack_user}"
+         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Creating user ${stack_user}:${stack_uid}"
+         adduser -s /bin/ash -D -G "${headphones_group}" -u "${stack_uid}" "${stack_user}" -h "/home/${stack_user}"
       fi
    fi
 }
@@ -137,13 +146,13 @@ Configure(){
       -e "/^\[General\]/,/^\[.*\]/ s%^api_key =.*%api_key = ${global_api_key}%" \
       -e "/^\[General\]/,/^\[.*\]/ s%^api_enabled =.*%api_enabled = 1%" \
       "${config_dir}/headphones.ini"
-   if [ "${headphones_enabled}" ]; then
+   if getent hosts headphones >/dev/null 2>&1; then
       sed -i "s%^http_root =.*%http_root = /headphones%" "${config_dir}/headphones.ini"
    fi
 }
 
 Kodi(){
-   if [ "${kodi_enabled}" ]; then
+   if getent hosts kodi >/dev/null 2>&1; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Kodi"
       sed -i \
          -e "/^\[XBMC\]/,/^\[.*\]/ s%^xbmc_update =.*%xbmc_update = 1%" \
@@ -161,7 +170,7 @@ Kodi(){
 }
 
 Deluge(){
-   if [ "${deluge_enabled}" ]; then
+   if getent hosts deluge >/dev/null 2>&1; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Deluge"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^torrentblackhole_dir =.*%torrentblackhole_dir = ${deluge_watch_dir}%" \
@@ -183,7 +192,7 @@ Deluge(){
 }
 
 SABnzbd(){
-   if [ "${sabnzbd_enabled}" ]; then
+   if getent hosts sabnzbd >/dev/null 2>&1; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure SABnzbd"
       sed -i \
          -e "/^\[General\]/,/^\[.*\]/ s%^nzb_downloader =.*%nzb_downloader = 0%" \
@@ -199,7 +208,7 @@ SABnzbd(){
 }
 
 Airsonic(){
-   if [ "${airsonic_enabled}" ]; then
+   if getent hosts airsonic >/dev/null 2>&1; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure Airsonic"
       sed -i \
          -e "/^\[Subsonic\]/,/^\[.*\]/ s%^subsonic_host =.*%subsonic_host = http://airsonic:4040/airsonic/%" \
@@ -229,6 +238,22 @@ Prowl(){
    fi
 }
 
+Telegram(){
+   if [ "${telegram_token}" ] && [ "${telegram_chat_id}" ]; then
+      echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configuring Telegram notifications"
+      sed -i \
+         -e "/^\[Telegram\]/,/^\[.*\]/ s%^telegram_enabled =.*%telegram_enabled = 1%" \
+         -e "/^\[Telegram\]/,/^\[.*\]/ s%^telegram_token =.*%telegram_token = ${telegram_token}%" \
+         -e "/^\[Telegram\]/,/^\[.*\]/ s%^telegram_onsnatch =.*%telegram_onsnatch = 1%" \
+         -e "/^\[Telegram\]/,/^\[.*\]/ s%^telegram_userid =.*%telegram_userid = ${telegram_chat_id}%" \
+         "${config_dir}/headphones.ini"
+   else
+      sed -i \
+         -e "/^\[Telegram\]/,/^\[.*\]/ s%^telegram_enabled =.*%telegram_enabled = 0%" \
+         "${config_dir}/headphones.ini"
+   fi
+}
+
 OMGWTFNZBs(){
    if [ "${omgwtfnzbs_user}" ]; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configuring OMGWTFNZBs search provider"
@@ -245,17 +270,13 @@ OMGWTFNZBs(){
 }
 
 MusicBrainz(){
-   if [ "${musicbrainz_enabled}" ]; then 
+   if getent hosts musicbrainz >/dev/null 2>&1; then
       echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Configure MusicBrainz"
       sed -i \
          -e "s%^mirror =.*%mirror = custom%" \
          -e "s%^customsleep =.*%customsleep = 1%" \
          -e "s%^customhost =.*%customhost = musicbrainz%" \
          "${config_dir}/headphones.ini"
-      while [ "$(nc -z musicbrainz 5432; echo $?)" -ne 0 ]; do
-         echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Waiting for the MusicBrainz database to come online..."
-         sleep 10
-      done
       while [ "$(nc -z musicbrainz 5000; echo $?)" -ne 0 ]; do
          echo "$(date '+%d-%b-%Y %T') - INFO :: Entrypoint : Waiting for the MusicBrainz web page to come online..."
          sleep 10
@@ -283,7 +304,7 @@ LaunchHeadphones(){
 
 ##### Script #####
 Initialise
-CheckOpenVPNPIA
+CheckPIANextGen
 CreateGroup
 CreateUser
 if [ ! -f "${config_dir}/headphones.ini" ]; then FirstRun; fi
@@ -293,6 +314,7 @@ Deluge
 SABnzbd
 Airsonic
 Prowl
+Telegram
 OMGWTFNZBs
 MusicBrainz
 SetOwnerAndGroup

@@ -1,5 +1,8 @@
 FROM alpine:3.10
 MAINTAINER boredazfcuk
+
+# headphones_version not used, just increment to force a rebuild
+ARG headphones_version="Master - Commit 379fd3d"
 ARG app_dependencies="git ca-certificates python libxml2 libxslt-dev tzdata openssl wget lame py-openssl"
 ARG app_repo="rembo10/headphones"
 ENV app_base_dir="/Headphones" \
